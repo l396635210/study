@@ -1,0 +1,7 @@
+<?php
+
+use Commond\Commond;
+
+$loader = require __DIR__.'/../app/autoload.php';
+
+new Commond();
