@@ -3,6 +3,7 @@
 namespace DBAL\PDOMySql;
 use DBAL\Resources\MySql;
 use DBAL\Resources\MySqlException;
+
 class Driver {
 	
 	protected $dsn = "mysql:";
@@ -11,6 +12,7 @@ class Driver {
 	protected $confDir;
 	protected $env;
 	public function connect(){
+
 		$this->config();
 		try {
 			$dbh = new \PDO($this->dsn, $this->user, $this->password);
@@ -27,9 +29,9 @@ class Driver {
 	}
 	
 	protected function config(){
-		
-		if(isset($_SERVER['CONTEXT_DOCUMENT_ROOT']))
-			$conf = $_SERVER['CONTEXT_DOCUMENT_ROOT'].'/../app/config/mysql.ini';
+
+		if(defined('__ROOT__'))
+			$conf = __ROOT__.'/../app/config/mysql.ini';
 		else
 			$conf = getcwd().'/app/config/mysql.ini';
 

@@ -24,7 +24,6 @@ class Controller{
 		$bundleSpace = explode('\\',get_class($this))[0];
 		$this->modelSpace = $bundleSpace.'\\Model\\';
 		$this->entitySpace = $bundleSpace.'\\Entity\\';
-		
 	}
 	
 	protected function get($name){
@@ -46,6 +45,7 @@ class Controller{
 	
 	protected function createForm( $form, $entity){
 		$this->form = new Form();
+
 		$this->form->createForm( $form, $entity);
 		return $this->form;
 	}
@@ -53,14 +53,21 @@ class Controller{
 	protected function redirectToRoute( $name, $parameters = array()){
 		$route = route($name);
 		$rootURI = $_SERVER['SERVER_NAME'].$_SERVER['CONTEXT_PREFIX'].'index.php';
-		$sessionStorage = $this->get('session');
-		$sessionStorage->set('success', $parameters['success']);
-
  		header("location:http://$rootURI"."{$route['url']}");
 		
 	}
 	
 	protected function getUser(){
 		return $this->kernel->getUser();
+	}
+
+	protected function addFlash($type, $message){
+		$sessionStorage = $this->get('session');
+		$sessionStorage->set($type, $message);
+	}
+
+	protected function _addSuccess($message){
+		$message = '<p class=\'alert alert-success\'>提示：'.$message.'</p>';
+		$this->addFlash('success', $message);
 	}
 }

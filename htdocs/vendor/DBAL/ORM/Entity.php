@@ -13,13 +13,21 @@ class Entity{
 	protected $pdoType = [];
 	
 	public function __construct( $result=NULL ){
-		$this->init();
-		
+		$this->init( $result );
 	}
 	
-	protected function init(){
+	protected function init( $result ){
 		$this->setTable();
 		$this->setFields();
+		$this->setProperties( $result );
+	}
+
+	protected function setProperties($result){
+		if(is_array($result)){
+			foreach( $result as $property=>$value ){
+				$this->set($property, $value);
+			}
+		}
 	}
 	
 	/**
@@ -52,6 +60,7 @@ class Entity{
 				$rule = $this->setFieldLenth($rule);
 				$rule = $this->setFieldNotNull($rule);
 				$this->fields[$attr] = $rule;
+				$this->$attr = NULL;
 			}
 		}
 	}
@@ -121,19 +130,21 @@ class Entity{
     }
 
     public function set($property, $value) {
-		$this->validate($property, $value);
-		if($property=='password'){
-			$this->$property = password_hash($value, PASSWORD_BCRYPT);
-		}else{
-			$this->$property = $value;
+		if(property_exists($this, $property)){
+			$this->validate($property, $value);
+			if($property=='password'){
+				$this->$property = password_hash($value, PASSWORD_BCRYPT);
+			}else{
+				$this->$property = $value;
+			}
 		}
-		
 		return $this;
     }
 	
 	public function validate($property, $value){
 		$property = $property[0] == ':' ? substr($property,1) : $property;
 		$property = symbol2camelize($property);
+		$property = $this->fields[$property];
 		if(!$this->nullValidate($property, $value)){
 			$this->invalidProperty($property, '不能为空');
 			return false;
@@ -146,7 +157,7 @@ class Entity{
 			$this->invalidProperty($property, '字数不匹配');
 			return false;
 		}
-		if(!$this->uniqueValidate($property, $value)){
+		if(!$this->constraintValidate($property, $value)){
 			$this->invalidProperty($property, '已存在');
 			return false;
 		}
@@ -154,23 +165,16 @@ class Entity{
 	}
 	
 	protected function invalidProperty($property, $message){
-		$property = $this->$property;
+		#$property = $this->$property;
 		addError($property['comment'].$message);
 	}
 	
 	protected function nullValidate($property, $value){
-		$property = $this->$property;
-		if(!isset($property['notNull']) && ($value==NULL&&$value!==0)){
-			return false;
-		}
-		if(NULL===$value && strtolower(trim($property['notNull'])=='not null')){
-			return false;
-		}
-		return true;
+		return !(is_null($value)||$value==='')&&($property['notNull']===true);
 	}
 	
 	protected function typeValidate($property, $value){
-		$property = $this->$property;
+		#$property = $this->$property;
 		switch(strtolower($property['type'])){
 			case 'char':
 			case 'varchar':
@@ -211,19 +215,19 @@ class Entity{
 	}
 	
 	protected function lengthValidate($property, $value){
-		$property = $this->$property;
-		return isset($property['length']) ? $property['length'] > strlen($value) : true;
+		#$property = $this->$property;
+		return isset($property['length']) && $property['length'] > 0 ? $property['length'] > strlen($value) : true;
 	}
 	
-	protected function uniqueValidate($property, $value){
-		list($unique, $_property) = array(false, $this->$property);
-		if(isset($_property['unique']) && $_property['unique']=='unique'){
-			$sql = "SELECT * FROM ".$this->getTable()." WHERE $property = :$property";
-			$model = new Model();
-
+	protected function constraintValidate($property, $value){
+		list($unique, $_property) = array(false, $property);
+		if(isset($_property['key']) && $_property['key']=='unique key'){
+			$field = $property['field'];
+			$sql = "SELECT * FROM ".$this->getTable()." WHERE {$field} = :{$field}";
+			$model = new Model($this);
 			$unique = $model->createQuery($sql)
-			  ->setParam([":$property"=>$value]
-					, $this->getPDOType($property)
+			  ->setParam([":$field"=>$value]
+					, $this->getPDOType($field)
 					, isset($_property['length']) ? $_property['length'] : 0)
 			  ->execute()
 			  ->fetch();
@@ -231,32 +235,47 @@ class Entity{
 		
 		return !$unique;	  
 	}
-	
-	public function getPDOType( $property ){
-		$property = $this->symbol2camelize($property);
 
-		switch(strtolower($property['type'])){
-			case 'char':
-			case 'varchar':
-			case 'date':
-			case 'time':
-			case 'timestamp':
-			case 'datetime':
-			case 'text':
-				return \PDO::PARAM_STR;
-			
+	public function getPDOType( $field ){
+		$field = $this->getRule(symbol2camelize($field));
+
+		switch(strtolower($field['type'])){
+
 			case 'int':
 				return \PDO::PARAM_INT;
 				
 			case 'bool':
 				return 	\PDO::PARAM_BOOL;
+
+			default:
+				return \PDO::PARAM_STR;
 		}
 		
 	}
+
+	public function getRule($property){
+		return $this->fields[$property];
+	}
+
+	public function getSchemaType( $property ){
+		$property = $this->getRule(symbol2camelize($property));
+		switch(strtolower($property['type'])){
+			case 'email':
+			case 'password':
+				return 'char';
+
+			case 'bool':
+				return 	'tinyint';
+
+			default:
+				return strtolower($property['type']);
+		}
+	}
 	
 	public function getFieldLength( $property ){
-		$property = $this->symbol2camelize($property);
-		return isset($property['length']) ? $property['length'] : 0;
+		$property = symbol2camelize($property);
+		$rule = $this->getRule($property);
+		return isset($rule['length']) ? $rule['length'] : 0;
 	}
 	
 	public function getPDOLength( $property ){

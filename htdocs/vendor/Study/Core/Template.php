@@ -23,7 +23,7 @@ class Template{
 		'/{% if (\w+) %}/'				 	 => "\";\nif(isset(\$this->parameters['$1']) ? \$this->parameters['$1'] : $$1 ):\necho \"",
 		'/{% endif %}/'						 => "\";\nendif;\necho \"",
 		"/{{ form.row\('([a-zA-Z]+)'\) }}/"	 => "\";\necho \$this->parameters['form']->row('$1');\necho \"",
-		"/{{ form.start\(([a-zA-Z,']*)\) }}/"=> "\";\necho \$this->parameters['form']->start($1);\necho \"",
+		"/{{ form.start\(([\w\s-=]*)([,]?)([\w\s'=-]*)\) }}/" => "\";\necho \$this->parameters['form']->start(\"$1\",\"$3\");\necho \"",
 		"/{{ form.end\(\) }}/"				 => "\";\necho \$this->parameters['form']->end();\necho \"",
 		"/{{ errors\('all'\) }}/"			 => "\";\nforeach(errors('all') as \$error){\necho \$error;\n}\necho\"",
 		"/{{ success\('([a-zA-Z]+)'\) }}/"	 => "\";\necho isset(\$_SESSION['$1']) ? \$_SESSION['$1'] : \"\";unset(\$_SESSION['$1']);\necho\"",
@@ -31,6 +31,7 @@ class Template{
 		"/{{ path\('([a-zA-Z_]+)',\s+{([a-zA-Z']+):([a-zA-Z]+).([a-zA-Z]+)}\) }}/"	
 			=> "\";\necho path(['$1', [$2=>$$3['$4']]]);\necho \"",
 		"/{'\([a-zA-Z]+\)':\([\w+]\)}/"		 => "['$1'=>'$2']",
+		"/{{ asset\('([a-zA-Z.\/_\d-]+)'\) }}/" => "/std/assets/$1",
 	];
 	
 	public function __construct($kernel){
@@ -65,8 +66,13 @@ class Template{
 	];
 	
 	protected $parseLayoutCallFunction = [
-		'/"/'			   					 	=> '\"',
+		'/"/'			   					 		=> '\"',
+		'/{{ ([a-z]+) }}/'							=> "\";\necho \$this->parameters['$1'];\necho \"",
 		"/{% struct ([a-z]+) %}{% endstruct %}/"	=> "\";\n\$this->struct_$1();\n echo \"",
+		"/{{ asset\('([a-zA-Z.\/_\d-]+)'\) }}/" 	=> "/std/assets/$1",
+		"/{{ path\('([a-zA-Z_]+)'\) }}/"			=> "\";\necho path('$1');\necho \"",
+		"/{{ path\('([a-zA-Z_]+)',\s+{([a-zA-Z']+):([a-zA-Z]+).([a-zA-Z]+)}\) }}/"
+		=> "\";\necho path(['$1', [$2=>$$3['$4']]]);\necho \"",
 	];
 	
 	protected function ChipConstruct(){

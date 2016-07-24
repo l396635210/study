@@ -15,7 +15,7 @@ class ArticleType extends FormType{
 			, 'attr'=>"class='form-control'"]);
 	}
 	
-	public function configOptions(){
-		$this->options['entity'] = new Article();
+	public function configOptions( $entity ){
+		$this->options['entity'] = new Article( $entity );
 	}
 }

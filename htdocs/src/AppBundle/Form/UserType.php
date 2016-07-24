@@ -7,22 +7,20 @@ use Study\Core\Form\FormType;
 
 class UserType extends FormType{
 	
-	public function buildForm( $form ){
-		$string = 'ÐÕÃû²»³¬¹ý10¸ö×Ö';
-		$encode = mb_detect_encoding($string, array("ASCII","UTF-8","GB2312","GBK",'BIG5')); 
-		$form->add('username', self::TEXT, ['label'=>'ÐÕÃû'
-			, 'attr'=>"class='form-control' placeholder='ÐÕÃû²»³¬¹ý10¸ö×Ö'"])
-			 ->add('account', self::TEXT, ['label'=>'ÕÊºÅ'
-			, 'attr'=>"class='form-control'"])
+	public function buildForm( $form , $entity){
+		$form->add('username', self::TEXT, ['label'=>'å§“å'
+			, 'attr'=>"class='form-control' placeholder='æœ€å¤šè¾“å…¥10ä¸ªå­—'"])
+			 ->add('account', self::TEXT, ['label'=>'å¸å·'
+			, 'attr'=>"class='login-control m-b-10' placeholder='Username'"])
 			 ->add('email', self::TEXT, ['label'=>'Email'
 			, 'attr'=>"class='form-control'"])
-			 ->add('password', self::PASSWORD, ['label'=>'ÃÜÂë'
-			, 'attr'=>"class='form-control'"]);
+			 ->add('password', self::PASSWORD, ['label'=>'å¯†ç '
+			, 'attr'=>"class='login-control' placeholder='Password'"]);
 			
 	}
 	
-	public function configOptions(){
-		$this->options['entity'] = new User();
+	public function configOptions( $user ){
+		$this->options['entity'] = new User( $user );
 	}
 	
 }

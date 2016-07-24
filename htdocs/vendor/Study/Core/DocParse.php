@@ -14,21 +14,21 @@ class DocParse{
 		$this->rootDir = $root;
 		$pathes = array_diff(scandir($root), ['.','..']);
 		$this->initCtrl($pathes);
-		
+
 	}
 	
 	protected function initCtrl($pathes){
 		$this->setCtrlDirs($pathes);
 		$this->setCtrlClasses();
-		$this->setCtrlMethods();
+        $this->setCtrlMethods();
 	}
-	//controllerÂ·¾¶
+	//controllerÂ·ï¿½ï¿½
 	protected function setCtrlDirs($pathes){
 		array_walk($pathes,function($item){
 			$this->ctrlDirs[] = $item.'/Controller';
 		});
 	}
-	//controllerÀà
+	//controllerï¿½ï¿½
 	protected function setCtrlClasses(){
 		foreach($this->ctrlDirs as $ctrlDir){
 			$files = array_diff(scandir($this->rootDir.$ctrlDir), ['.','..']);
@@ -37,11 +37,11 @@ class DocParse{
 			}
 		}
 	}
-	//controller·½·¨
+	//controllerï¿½ï¿½ï¿½ï¿½
 	protected function setCtrlMethods(){
 		foreach($this->ctrlClasses as $Class){
 			$reflection = new \ReflectionClass ( $Class );
-			//Í¨¹ý·´Éä»ñÈ¡ÀàµÄ×¢ÊÍ  
+			//Í¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½×¢ï¿½ï¿½  
 			$this->ctrlMethods = array_merge($this->ctrlMethods, $reflection->getMethods( \ReflectionMethod::IS_PUBLIC));
 		}
 		

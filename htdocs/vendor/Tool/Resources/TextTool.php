@@ -12,7 +12,6 @@ class TextTool{
 			$input = $args;
 			$separator = '_';
 		}
-		
 		return lcfirst(str_replace($separator, '', ucwords($input, $separator)));
 	}
 	

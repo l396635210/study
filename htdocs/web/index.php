@@ -4,7 +4,7 @@ use Study\Resources\Request;
 
 $loader = require __DIR__.'/../app/autoload.php';
 
-define('__ROOT__', $_SERVER['CONTEXT_DOCUMENT_ROOT']);
+define('__ROOT__', __DIR__);
 		
 $kernel = new AppKernel('dev',true);
 

@@ -83,8 +83,8 @@ class Router{
 			}
 			return self::$routes[$name];
 		}catch(\Exception $e){
-			$trace = explode("#",$e->getTraceAsString());
-			StudyException::show($e->getMessage(),$trace);die;
+			#$trace = explode("#",$e->getTraceAsString());
+			StudyException::show($e);die;
 		}
 		
 	}
@@ -95,8 +95,11 @@ class Router{
 	}
 	
 	public function getRoutesFromController($dir){
+
 		$docParse = new DocParse($dir);
+
 		$docParse->parseController();
+
 	}
 	
 

@@ -7,6 +7,7 @@ use Study\Core\Form\FormType;
 class Form{
 	
 	protected $form;
+	protected $view;
 	protected $entity;
 	protected $formType;
 	
@@ -18,12 +19,11 @@ class Form{
 	public function createForm( $formType, $entity=NULL){
 
 		$this->formType = $formType;
-		$this->formType->configOptions();
+		$this->formType->configOptions($entity);
 		$this->formType->buildForm( $this, $entity );
 		
 		$this->entity = $this->formType->getEntity();
 		$this->createToken();
-
 		$this->form['_method'] = $this->formType->get('method');
 	}
 	
@@ -33,34 +33,11 @@ class Form{
 			foreach($this->form as $key => $val){
 				if($key!='_token' && $key!='_method'){
 					$this->setEntity($key, $this->request[$entityName][$key]);
-					$this->setFormValue($key, $this->request[$entityName][$key]);
 				}
 			}
 		}catch(FormException $e){
-			var_dump($e);
 		}
 		return $this->isValid;
-	}
-	
-	public function setFormValue($key, $val=NULL){
-		$method = 'get'.ucfirst($key);
-		#var_dump($this->row($key));
-		$val = $val ? $val : $this->formType->getEntity()->$method();
-		if(strstr($this->form[$key], 'input') && !is_array($val)){
-			$value = 'value='.$val.' />';
-			$this->form[$key] = strtr($this->form[$key], ['/>'=> $value]);
-			return;
-		}
-		if(strstr($this->form[$key], 'select') && !is_array($val)){
-			$value = 'value='.$val.' selected ';
-			$this->form[$key] = strtr($this->form[$key], ['value='.$val => $value]);
-			return;
-		}
-		if(strstr($this->form[$key], 'textarea') && !is_array($val)){
-			$value = '>'.$val.'</textarea>';
-			$this->form[$key] = strtr($this->form[$key], ['></textarea>'=>$value]);
-			return;
-		}
 	}
 	
 	protected function setEntity($property, $value){
@@ -111,41 +88,63 @@ class Form{
 		}
 		
 		$label = $this->buildLabel($field, $attr);
-		$entity = $this->formType->getEntityName();
-		
-		switch($type){
-			case $type==FormType::TEXT:
-			case $type==FormType::HIDDEN:
-			case $type==FormType::PASSWORD:
-					$this->buildInput($field, $type, $attr, $label, $entity);
-				break;
-			
-			case $type==FormType::ENTITY:
-					$this->buildEntity($field, $type, $attr, $label, $entity);
-				break;
-			
-			case $type==FormType::TEXTAREA:
-					$this->buildTextArea($field, $type, $attr, $label, $entity);
-				break;	
-		}
+
+
+		$this->form[$field] = ['field'=>$field, 'type'=>$type, 'attr'=>$attr, 'label'=>$label];
+
 		
 		return $this;
 	}
-	
+
+
+	protected function buildView(){
+
+		foreach($this->form as $field => $item){
+			if($field!='_method'){
+				$type = $item['type']; $attr = $item['attr'];
+				$label = $item['label'];
+				switch($type){
+					case $type==FormType::TEXT:
+					case $type==FormType::HIDDEN:
+					case $type==FormType::PASSWORD:
+						$this->buildInput($field, $type, $attr, $label);
+						break;
+
+					case $type==FormType::ENTITY:
+						$this->buildEntity($field, $type, $attr, $label);
+						break;
+
+					case $type==FormType::TEXTAREA:
+						$this->buildTextArea($field, $type, $attr, $label);
+						break;
+				}
+			}
+
+		}
+
+	}
+
+	public function view(){
+		$this->buildView();
+		#var_dump($this->view);die;
+		return $this;
+	}
+
 	protected function buildLabel($field, $attr){
 		$entity = $this->formType->getEntityName();
 		return isset($attr['label']) ? "<label for='{$entity}_$field' >{$attr['label']}</label>" : "";
 	}
-	protected function buildInput($field, $type, $attr, $label, $entity){
-		
+	protected function buildInput($field, $type, $attr, $label){
+		$entity = $this->formType->getEntityName();
 		$method = 'get'.ucfirst($field);
 		$value = $this->formType->getEntity()->$method();
 		$value = is_string($value) ? "value = {$value}" : "";
-		$this->form[$field] = $label."<input id={$entity}_$field name={$entity}["."$field] type='$type' {$value} $attr[attr] />";
+		$this->view[$field] = $label."<input id={$entity}_$field name={$entity}["."$field] type='$type' {$value} $attr[attr] />";
 	
 	}
 	
-	protected function buildEntity($field, $type, $attr, $label, $entity){
+	protected function buildEntity($field, $type, $attr, $label){
+
 		$Model = strtr($attr['option'], [':'=>'\\Model\\']);
 		$Model .= 'Model';
 		$Entity = strtr($attr['option'], [':'=>'\\Entity\\']);
@@ -153,22 +152,30 @@ class Form{
 		$model = new $Model(new $Entity());
 		
 		$list = $model->findAll()->getFind();
-		
+
+		$entity = $this->formType->getEntityName();
+		$method = 'get'.ucfirst($field);
+		$value = $this->formType->getEntity()->$method();
+
 		$option = "";
 		foreach($list as $item){
-			$option .= "<option value={$item['id']}>{$item[$attr['option_label']]}</option>";
+			$_selected = $value == $item['id'] ? 'selected' : '';
+			$option .= "<option value={$item['id']} {$_selected} >{$item[$attr['option_label']]}</option>";
 		}
-		$this->form[$field] = $label.
+		$this->view[$field] = $label.
 			"<select id={$entity}_$field name={$entity}["."$field] $attr[attr] >"
 			.$option."</select>";
 	}
 	
-	protected function buildTextArea($field, $type, $attr, $label, $entity){
-		$this->form[$field] = $label."<textarea id={$entity}_{$field} name={$entity}["."{$field}] $attr[attr] ></textarea>";
+	protected function buildTextArea($field, $type, $attr, $label){
+		$entity = $this->formType->getEntityName();
+		$method = 'get'.ucfirst($field);
+		$value = $this->formType->getEntity()->$method();
+		$this->view[$field] = $label."<textarea id={$entity}_{$field} name={$entity}["."{$field}] $attr[attr] >{$value}</textarea>";
 	}
 	
 	public function start($action='', $attr=''){
-		return "<form name={$this->formType->getEntityName()} action='{$action}' method='{$this->formType->get('method')}' {$attr}>";
+		return "<form name={$this->formType->getEntityName()} id='form-{$this->formType->getEntityName()}' action='{$action}' method='{$this->formType->get('method')}' {$attr}>";
 	}
 	
 	protected function createToken(){
@@ -179,19 +186,19 @@ class Form{
 	}
 	
 	protected function addToken(){
-		$this->form['_token'] = "<input id='_token' name='_token' type='hidden' value={$this->_token} />";
+		$this->view['_token'] = "<input id='_token' name='_token' type='hidden' value={$this->_token} />";
 	}
 	
 	public function end(){
 		$this->addToken();
-		return $this->form['_token']."</form>";
+		return $this->view['_token']."</form>";
 	}
 	
 	public function row( $property ){
-		return $this->form[$property];
+		return $this->view[$property];
 	}
 	
 	public function content(){
-		return $this->form;
+		return $this->view;
 	}
 }

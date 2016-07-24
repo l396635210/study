@@ -9,8 +9,7 @@ class UserModel extends Model{
 	
 	public function validAuthor($request){
 		$post = $request->post('user');
-		$user = $this->findBy('account','=',$request)->getFind('one');
-		
+		$user = $this->findBy(['account','=',$post['account']])->getFind('one');
 		if( $user && password_verify($post['password'],$user['password']) ){
 			$sessionStorage = $this->getContainer('session');
 			$sessionStorage->set('user',$user);

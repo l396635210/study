@@ -1,28 +1,20 @@
 {@ extends 'user.chip.php' @}
 
 {% struct body %}
-<div class="row">
-	<div class="col-md-12">
-		{{ errors('all') }}
-	</div>
-</div>
-<div class="row">
-	<div class="auth-form">
-		<div class="auth-form-header">
-			<h1>登陆</h1>
-		</div>
+<header>
+	<h1>管理</h1>
+	<p>{{ errors('all') }}</p>
+</header>
 
-		<div class="auth-form-body">
-		{{ form.start() }}
-		<div class="form-group">
-		{{ form.row('account') }}
-		</div>
-		<div class="form-group">
-		{{ form.row('password') }}
-		</div>
-		<button type="submit" class="btn btn-primary btn-block"  value="submit" />提交</button>
-		{{ form.end() }}
-		</div>
-	</div>
-</div>	
+<div class="clearfix"></div>
+
+<!-- Login -->
+{{ form.start( , class='box tile animated active' id='box-login') }}
+<h2 class="m-t-0 m-b-15">Login</h2>
+{{ form.row('account') }}
+{{ form.row('password') }}
+<div class="checkbox m-b-20">
+</div>
+<button class="btn btn-sm m-r-5">Sing In</button>
+{{ form.end() }}
 {% endstruct %}
