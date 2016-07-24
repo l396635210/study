@@ -2,6 +2,7 @@
 
 namespace AppBundle\Controller;
 
+use AppBundle\Entity\Category;
 use Study\Core\Controller;
 use Study\Core\Route;
 
@@ -16,7 +17,7 @@ class CategoryController extends Controller{
 		$list = $this->getModel('category')
 			->findAll()
 			->getFind();
-			
+
 		return $this->render('category/index.chip.php', [
 			'list'	=> $list
 		]);
@@ -29,6 +30,7 @@ class CategoryController extends Controller{
 		$details = $this->getModel('category')
 			->findOne($request->get('id'))
 			->getFind('one');
+
 		$form = $this->createForm(new CategoryType(), $details);
 		
 		$form->handleRequest($request);
@@ -38,13 +40,49 @@ class CategoryController extends Controller{
 			$category->setUpdateTime(date('Y-m-d H:i:s'));
 			$user = $this->getUser();
 			$category->setUpdateUser($user['id']);
-			$this->getModel('category')->update($category);
+			$res = $this->getModel('category')->update($category);
+
+			if($res){
+				$this->_addSuccess("修改{$res}条记录");
+				$this->redirectToRoute('category_list');
+			}
+
 		}
 		
-		return $this->render('category/edit.chip.php', [
+		return $this->render('category/create.chip.php', [
 			'category'	=> $details,
-			'form'		=> $form,
+			'form'		=> $form->view(),
 		]);
+	}
+
+	/**
+	 * @Route('/admin/category/create', 'category_create')
+	 */
+	public function create($request){
+		$form = $this->createForm(new CategoryType(), new Category());
+
+		$form->handleRequest($request);
+
+		if($form->isSubmit() && $form->isValid()){
+			$category = $form->getData();
+			$category->setCreateTime(date('Y-m-d H:i:s'));
+			$user = $this->getUser();
+			$category->setCreateUser($user['id']);
+			$category->setUpdateTime(date('Y-m-d H:i:s'));
+			$category->setUpdateUser($user['id']);
+			$res = $this->getModel('category')->insert($category);
+
+			if($res){
+				$this->_addSuccess('添加'.$category->getTitle().'成功');
+				$this->redirectToRoute('category_list');
+			}
+
+		}
+
+		return $this->render('category/create.chip.php', [
+			'form'		=> $form->view(),
+		]);
+
 	}
 
 }

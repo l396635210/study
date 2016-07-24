@@ -20,45 +20,43 @@ class Migration{
 	protected function create( $Entity ){
 		$entity = new $Entity();
 		if($entity->getFields()){
-			$table = $entity->getTable();
-			$sql = "CREATE TABLE if not exists {$table} (
-					id int(10) unsigned NOT NULL AUTO_INCREMENT,\n";
-					
-					var_dump($entity->getFields());die;
-			foreach($entity->getFields() as $key=>$val){
-				$key = camelize2symbol($key);
-				$sql .= $this->createSqlFields($key, $val);
-			}
-			foreach($entity->getFields() as $key=>$val){
-				$key = camelize2symbol($key);
-				$sql .= $this->createSqlKey($key, $val);
-			}
-			$sql .=" PRIMARY KEY (`id`)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
-
+			$sql = $this->createEntitySql($entity);
 			$this->model->exec($sql);
-			print_r($this->model->info("CREATE $table Success!\n"));
+			print_r($this->model->info("CREATE {$entity->getTable()} Success!\n"));
 		}
 	}
 	
-	protected function createSqlKey($field, $rules, $end=",\n"){
-		$sql = "";
-		foreach($rules as $key=>$val){
-			if($key=='unique' && $val == 'unique'){
-				$sql .= "unique({$field}){$end}";
-			}
+	protected function createEntitySql($entity){
+
+		$_sql = "CREATE TABLE if not exists {$entity->getTable()} (\n";
+		$_key = "";
+		foreach($entity->getFields() as $field=>$rules){
+
+			$_sql .= $this->entityFieldRuleSql($entity, $field, $rules);
+			$_key .= isset($rules['key']) ? "{$rules['key']}({$field}),\n" : "";
 		}
+		$sql = substr($_sql.$_key, 0 , strripos($_sql.$_key, ','))."\n";
+
+		$sql .= ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
 		return $sql;
 	}
-	
-	protected function createSqlFields($field, $rules, $end=",\n"){
-		
-		
-		var_dump($field);
-		var_dump($rules);
-		$sql = $field ;
-		var_dump($sql);die;
-		return $sql;
+
+	protected function entityFieldRuleSql($entity, $field, $rules, $end=",\n"){
+		$field = camelize2symbol($field);
+		$_field = $field;
+		$type = $entity->getSchemaType($field);
+		$_type_length = $rules['length']===0 ? $type : $type."({$rules['length']})";
+		$_unsigned = $rules['type']=='int'	 ? 'unsigned' : '';
+		$_notNull = $rules['notNull']===true ? 'NOT NULL' : 'default NULL';
+		$_auto_increment = $field == 'id' 	 ? 'AUTO_INCREMENT' : '';
+		$_comment = $rules['comment'] 		 ? "comment' ".$rules['comment']." '" : '';
+        if($rules['type']=='timestamp'){
+            $_default_value = 'DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP';
+        }else{
+            $_default_value = '';
+        }
+        $sql = "{$_field} {$_type_length} {$_unsigned} {$_notNull} {$_auto_increment} {$_default_value} {$_comment}{$end}";
+        return $sql;
 	}
 	
 	public function migrate( $args ){
@@ -113,7 +111,7 @@ class Migration{
 		//判断添加字段，向表里添加字段	
 		$addFields = array_diff_key($entity->getFields(),$fields);
 		if( $addFields ){
-			$this->add($entity->getTable(), $addFields);
+			$this->addFieldToEntitySql($entity, $addFields);
 		}
 		
 		//判断删除字段，从表里删除字段
@@ -125,17 +123,17 @@ class Migration{
 			$this->drop($entity->getTable(), $dropKey);
 		}
 	}
-	
-	protected function add($table, $fields){
-		foreach($fields as $key=>$val){
-			$sql = "alter table $table add ";
-			$key = camelize2symbol($key);
-			$sql .= $this->createSqlFields($key, $val, ';');
-			$this->model->exec($sql);
-			print_r($this->model->info("ADD $key to $table Success!\n"));
+
+	protected function addFieldToEntitySql($entity, $fields){
+		$_add = "alter table {$entity->getTable()} add ";
+		foreach($fields as $field=>$rules){
+			$field = camelize2symbol($field);
+			$sql = $_add .' '.$this->entityFieldRuleSql($entity, $field, $rules, ";");
+            $this->model->exec($sql);
+			print_r($this->model->info("ADD $field to {$entity->getTable()} Success!\n"));
 		}
 	}
-	
+
 	protected function drop($table, $fields){
 		foreach($fields as $key=>$val){
 			$sql = "alter table $table drop ".camelize2symbol($key).";";

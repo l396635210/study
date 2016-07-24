@@ -20,14 +20,7 @@ abstract class FormType{
 	
 	abstract function buildForm( $form, $entity );
 	
-	public function setFormValue( $form, $entity ){
-		$formContent = $form->content();
-		foreach($formContent as $key=>$val){
-			$form->setFormValue($key, $entity[$key]);
-		}
-	}
-	
-	abstract function configOptions();
+	abstract function configOptions( $entity );
 	
 	public function getEntity(){
 		return $this->options['entity'];

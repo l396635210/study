@@ -16,10 +16,11 @@ class UserController extends Controller{
 	 */
 	public function create($request){
 		
-		$form = $this->createForm(new UserType());
+		$form = $this->createForm(new UserType(), new User());
 		$form->handleRequest($request);
 
 		if($form->isSubmit() && $form->isValid()){
+
 			$user = $form->getData();
 			$user->setStatus(true);
 			$user->setLastLogin(date('Y-m-d H:i:s'));
@@ -32,8 +33,9 @@ class UserController extends Controller{
 
 			return $this->redirectToRoute('home',success('all'));
 		}
+
 		return $this->render('user/create.chip.php', [
-			'form'	=> $form,
+			'form'	=> $form->view(),
 		]);
 	}
 	
@@ -41,7 +43,7 @@ class UserController extends Controller{
 	 * @Route('/login', 'user_login')
 	 */
 	public function login($request){
-		$form = $this->createForm(new UserType());
+		$form = $this->createForm(new UserType(), new User());
 		$form->handleRequest($request);
 
 		if($form->isSubmit()){
@@ -51,7 +53,7 @@ class UserController extends Controller{
 			}
 		}
 		return $this->render('user/login.chip.php', [
-			'form'	=> $form,
+			'form'	=> $form->view(),
 		]);
 	}
 }

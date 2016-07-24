@@ -1,4 +1,7 @@
 {@ extends 'base.chip.php' @}
+{% struct head %}
+<script src="//cdn.ckeditor.com/4.5.10/standard/ckeditor.js"></script>
+{% endstruct %}
 
 {% struct body %}
 <div class="row">
@@ -22,3 +25,10 @@
 </div>
 {% endstruct %}
 
+{% struct script %}
+<script>
+	CKEDITOR.replace( 'category[descr]',{
+		filebrowserImageUploadUrl : "{{ path('upload') }}"
+	} );
+</script>
+{% endstruct %}

@@ -8,9 +8,9 @@ class User extends Entity{
 	
 	protected $username = ['type' => 'char', 'length'=>40, 'comment'=>'姓名'];
 	
-	protected $account = ['type' => 'char', 'length'=>40, 'comment'=>'帐号', 'unique'=>'unique'];
+	protected $account = ['type' => 'char', 'length'=>40, 'comment'=>'帐号', 'key'=>'unique key'];
 	
-	protected $email = ['type' => 'email', 'length'=>40, 'comment'=>'email', 'unique'=>'unique'];
+	protected $email = ['type' => 'email', 'length'=>40, 'comment'=>'email', 'key'=>'unique key'];
 	
 	protected $password = ['type' => 'password', 'length'=>60, 'comment'=>'密码'];
 	

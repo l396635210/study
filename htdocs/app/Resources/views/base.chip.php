@@ -16,7 +16,7 @@
 	  text-align: center;
 	}
 	</style>
-	{% struct stylesheet %}{% endstruct %}
+	{% struct head %}{% endstruct %}
   </head>
 
   <body>

@@ -42,24 +42,23 @@ class Kernel{
 		try{
 			if($this->access()){
 				$router = new Router();
-				$router->getRoutesFromController($this->getRootDir().'../src/');
+                $router->getRoutesFromController($this->getRootDir().'../src/');
 					#var_dump($_SERVER['PATH_INFO']!='\\');
 				#默认主页	
-
 				if(isset($_SERVER['PATH_INFO']) && $_SERVER['PATH_INFO']!='/'){
 					$commond = explode('/',$_SERVER['PATH_INFO'],2);
 					$route = $router::getRouteByUrl('/'.$commond[1]);
 				}
 
 				$route = isset($route) ? $route : route('home');
-				
 				list($Controller, $action) = explode('@',$route['action']);
 				$controller = new $Controller($this);
+
 				return $controller->$action($request);
 			}
 			throw new \Exception('没有权限');
 		}catch(\Exception $e){
-			StudyException::show($e->getMessage(), '您没有权限访问该页面请联系管理员');
+			StudyException::show($e);
 		}
 		
 	}
@@ -80,7 +79,6 @@ class Kernel{
 	}
 	
 	protected function access(){
-
 		$user = $this->getUser();
 		$role = $user['role'];
 		$isAccess = $this->validAuthor();

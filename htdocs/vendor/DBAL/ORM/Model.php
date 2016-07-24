@@ -38,6 +38,7 @@ class Model{
 	protected function conn(){
 		if(!$this->conn){
 			$driver = new Driver();
+
 			$this->conn = $driver->connect();
 		}
 		return $this->conn;
@@ -113,6 +114,7 @@ class Model{
 			 ->orderBy($orderBy)
 			 ->limit($limit);
 		$this->prepare($this->sql);
+		#$this->bindParams();
 		return $this;
 	}
 	
@@ -138,7 +140,11 @@ class Model{
 	
 	protected function where($where){
 		if(is_array($where) && count($where>0)){
-			$this->sql .= " AND ".implode(" ", $where);
+			if(count($where)==2){
+				$where = [$where[0], '=', $where[1]];
+			}
+			$this->sql .= " AND {$where[0]} {$where[1]} :{$where[0]}";
+			$this->setParam([':'.$where[0]=>$where[2]]);
 		}
 		return $this;
 	}
@@ -163,7 +169,9 @@ class Model{
 	}
 	
 	public function insert($entity){
+
 		try{
+			$this->entity = $entity;
 			if($this->entity->getTable()==$entity->getTable()){
 				$sql = "INSERT INTO {$this->entity->getTable()} ";
 				$properties = array_keys($this->entity->getFields());
@@ -171,25 +179,48 @@ class Model{
 				$values = array_map(function($n){
 					return ":$n";
 				}, $properties );
+
 				$sql .= '('.implode( ', ', $values ).')';
+
+				$this->prepare(camelize2symbol($sql));
+
+				foreach($entity->getFields() as $field=>$rule){
+					$getMethod = 'get'.ucfirst(symbol2camelize($field));
+					$value = $this->entity->$getMethod();
+
+					$this->setParam([':'.camelize2symbol($field)=>$value]);
+				}
+				$this->execute();
+				return $this->lastInsertId();
 			}
-			$this->prepare(camelize2symbol($sql));
-			foreach($entity->getFields() as $property=>$value){
-				$this->setParam([':'.camelize2symbol($property)=>$value]);
-			}
-			$this->execute();
-			return $this->lastInsertId();
 		}catch(MySqlException $e){
-			$e->show('添加数据出错',$e->message());die;
+			$e->show('添加数据出错',$e->getTrace());die;
 		}
 		
 	}
 	
 	public function update($entity){
 		try{
-			$sql = "";
+			if($this->entity->getTable()==$entity->getTable()){
+				//update 语句
+				$sql = "UPDATE {$this->entity->getTable()} SET ";
+
+				//set 参数
+				foreach($entity->getFields() as $property=>$value){
+					if($entity->get($property)!==NULL){
+						#$sql .= "{$property} = '{$entity->get($property)}', ";
+						$sql .= "{$property} = :{$property}, ";
+						$this->setParam([':'.camelize2symbol($property)=>$entity->get($property)]);
+					}
+				}
+				$sql = substr($sql, 0, strripos($sql, ','))." WHERE id={$entity->get('id')}";
+				$this->prepare(camelize2symbol($sql));
+				$this->execute();
+				return $this->rowCount();
+			}
+
 		}catch(MySqlException $e){
-			$e->show('修改数据出错',$e->message());die;
+			$e->show('修改数据出错',$e->getTrace());die;
 		}
 	}
 	
@@ -198,17 +229,21 @@ class Model{
 		return $this;
 	}
 	
-	public function setParam($array, $type=\PDO::PARAM_STR, $length=0){
+	public function setParam($array, $type=Null, $length=0){
+
 		$field = key($array)[0]==':' ? substr(key($array), 1) : key($array);
-		if(strtolower($field) == 'id'){
-			list($type, $length) = [\PDO::PARAM_INT, 10];
-		}elseif(isset($this->entity)){
-			$type = $this->entity->getPDOType($field);
-			$length = $this->entity->getPDOLength($field);
+
+		$type = $type ? \PDO::PARAM_STR : $this->entity->getPDOType($field);
+		$length = $length ? $length : $this->entity->getPDOLength($field);
+
+		if($type == \PDO::PARAM_INT && is_numeric(current($array))){
+			$val = (int)current($array);
+		}else{
+			$val = current($array);
 		}
 		$this->parameters[] = [
 			'parameter' => key($array),
-			'variable'	=> array_values($array)[0],
+			'variable'	=> $val,
 			'data_type' => $type,
 			'length'	=> $length,
 			];
@@ -218,11 +253,12 @@ class Model{
 	protected function bindParams(){
 		if($this->parameters){
 			foreach( $this->parameters as $parameter ){
+
 				if($parameter['length']){
 					$this->sth->bindParam(camelize2symbol($parameter['parameter']), $parameter['variable'], 
 					$parameter['data_type'], $parameter['length']);
 				}else{
-					$this->sth->bindParam($parameter['parameter'], $parameter['variable'], 
+					$this->sth->bindParam($parameter['parameter'], $parameter['variable'],
 					$parameter['data_type']);
 				}
 				
@@ -235,7 +271,6 @@ class Model{
 		if($this->parameters){
 			$this->bindParams();
 		}
-
 		$this->sth->execute();
 		return $this;
 	}
@@ -246,5 +281,9 @@ class Model{
 	
 	public function rowCount(){
 		return $this->sth->rowCount();
+	}
+
+	public function debugDumpParams(){
+		return $this->sth->debugDumpParams();
 	}
 }

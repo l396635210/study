@@ -10,11 +10,11 @@ class AppKernel extends Kernel{
 		'session'	=>  Study\Core\Security\SessionStorage::getInstance(),
 		];
 	}
-		
+
 	public function getRootDir()
     {
 		if(!$this->rootDir){
-			$this->rootDir = $_SERVER['CONTEXT_DOCUMENT_ROOT'];
+			$this->rootDir = __DIR__.'/';
 		}
 		return $this->rootDir;
     }

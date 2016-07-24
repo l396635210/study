@@ -15,9 +15,10 @@ class DefaultController extends Controller{
 	 * @Route('/', 'home')
 	 */
 	public function index($request){
+
 		$list = $this->getModel('article')->findAll()->getFind();
 		$str = ':title';
-		
+
 		return $this->render('default/index.chip.php', [
 			'list' => $list,
 		]);
@@ -28,7 +29,7 @@ class DefaultController extends Controller{
 	 * @Route('/default/list/page/{page}', 'default_list')
 	 */
 	public function listAction($request){
-		
+		echo 'list';
 		return $this->render('default/index.chip.php', [
 			#'str' => $str,
 			#'list' => $list,
@@ -48,13 +49,12 @@ class DefaultController extends Controller{
 	}
 	
 	/**
-	 * @Route('/default/create', 'default_create')
+	 * @Route('/admin/article/create', 'default_create')
 	 */
 	public function create($request){
 		$form = $this->createForm(new ArticleType(), new Article());
-		
-		$form->handleRequest($request);
 
+        $form->handleRequest($request);
 		if($form->isSubmit() && $form->isValid()){
 			$article = $form->getData();
 			$article->setStatus(true);
@@ -70,7 +70,7 @@ class DefaultController extends Controller{
 			return $this->redirectToRoute('home', success('all'));
 		}
 		return $this->render('default/create.chip.php', [
-			'form'	=> $form,
+			'form'	=> $form->view(),
 		]);
 	}
 }
