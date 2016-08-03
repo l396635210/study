@@ -16,13 +16,36 @@ class DefaultController extends Controller{
 	 */
 	public function index($request){
 
-		$list = $this->getModel('article')->findAll()->getFind();
-		$str = ':title';
+		$model = $this->getModel('article');
 
+		$about = $model->findOne(1)->getFind('one');
+
+		$new = $model->findBy(['status','=',1],['id'=>'desc'],[0,1])->getFind('one');
 		return $this->render('home/index.chip.php', [
-			'list' => $list,
+			'about'	=> $about,
+			'new'	=> $new,
 		]);
 		
+	}
+
+	/**
+	 * @Route('/welcome', 'welcome')
+	 */
+	public function welcome($request){
+
+        $model = $this->getModel('article');
+        $about = $model->findOne(1)->getFind();
+
+        $new = $model->findBy(['status','=',1],['id'=>'desc'],[0,1])->getFind('one');
+
+		return $this->render('home/welcome.chip.php', [
+			'about'	=> $about,
+			'new'	=> $new,
+		]);
+
+		return $this->render('home/welcome.chip.php', [
+		]);
+
 	}
 
 	/**

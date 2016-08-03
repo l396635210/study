@@ -2,6 +2,9 @@
 
 namespace DBAL\ORM;
 
+use AppBundle\Entity\User;
+use Study\Core\Kernel;
+use Study\Core\Security\SessionStorage;
 
 class Entity{
 	
@@ -9,13 +12,17 @@ class Entity{
 	
 	protected $table;
 	protected $fields;
-	
 	protected $pdoType = [];
 	
 	public function __construct( $result=NULL ){
 		$this->init( $result );
 	}
-	
+
+	protected function getUser(){
+		$sessionStorage = SessionStorage::getInstance();
+		return new User($sessionStorage->get('user'));
+	}
+
 	protected function init( $result ){
 		$this->setTable();
 		$this->setFields();
@@ -25,7 +32,7 @@ class Entity{
 	protected function setProperties($result){
 		if(is_array($result)){
 			foreach( $result as $property=>$value ){
-				$this->set($property, $value);
+				$this->set($property, $value, false);
 			}
 		}
 	}
@@ -129,9 +136,11 @@ class Entity{
         return $this->$property;
     }
 
-    public function set($property, $value) {
+    public function set($property, $value, $isValidate=true) {
 		if(property_exists($this, $property)){
-			$this->validate($property, $value);
+			if($isValidate==true){
+				$this->validate($property, $value);
+			}
 			if($property=='password'){
 				$this->$property = password_hash($value, PASSWORD_BCRYPT);
 			}else{
@@ -237,8 +246,8 @@ class Entity{
 	}
 
 	public function getPDOType( $field ){
-		$field = $this->getRule(symbol2camelize($field));
 
+		$field = $this->getRule(symbol2camelize($field));
 		switch(strtolower($field['type'])){
 
 			case 'int':

@@ -7,7 +7,9 @@ use DBAL\ORM\Entity;
 class Category extends Entity{
 
 	protected $title	  = ['type'=>'char', 'length'=>40, 'comment'=>'标题'];
-	
+
+	protected $status 	  = ['type'=>'bool',   'comment'=>'状态'];
+
 	protected $descr	  = ['type'=>'varchar', 'comment'=>'描述'];
 	
 	protected $createTime = ['type'=>'timestamp', 'comment'=>'创建时间'];

@@ -3,6 +3,7 @@
 namespace DBAL\PDOMySql;
 use DBAL\Resources\MySql;
 use DBAL\Resources\MySqlException;
+use Study\Core\Register;
 
 class Driver {
 	
@@ -11,6 +12,8 @@ class Driver {
 	protected $password;
 	protected $confDir;
 	protected $env;
+
+
 	public function connect(){
 
 		$this->config();
@@ -29,9 +32,9 @@ class Driver {
 	}
 	
 	protected function config(){
-
-		if(defined('__ROOT__'))
-			$conf = __ROOT__.'/../app/config/mysql.ini';
+		$register = Register::getInstance();
+		if($register->getParam('rootDir'))
+			$conf = $register->getParam('rootDir').'/../app/config/mysql.ini';
 		else
 			$conf = getcwd().'/app/config/mysql.ini';
 

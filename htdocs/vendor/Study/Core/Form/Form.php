@@ -2,7 +2,8 @@
 
 namespace Study\Core\Form;
 
-use Study\Core\Form\FormType;
+use Study\Resources\Request;
+use Tool\Resources\FileTool;
 
 class Form{
 	
@@ -16,6 +17,12 @@ class Form{
 	protected $_token;
 	protected $isSubmit = false;
 	protected $isValid = true;
+
+	/**
+	 * 创建表单
+	 * @param $formType FormType 子类
+	 * @param null $entity entity 子类实体
+	 */
 	public function createForm( $formType, $entity=NULL){
 
 		$this->formType = $formType;
@@ -26,12 +33,21 @@ class Form{
 		$this->createToken();
 		$this->form['_method'] = $this->formType->get('method');
 	}
-	
-	public function isValid(){
+
+	/**
+	 * 验证数据是否有效
+	 * @param null $request
+	 * @return bool
+	 */
+	public function isValid($request=NULL){
+		if($request && get_class($request)==Request::class){
+			$this->request = $request;
+		}
 		try{
 			$entityName = $this->formType->getEntityName();
 			foreach($this->form as $key => $val){
 				if($key!='_token' && $key!='_method'){
+					$this->saveBase64Image($entityName, $key);
 					$this->setEntity($key, $this->request[$entityName][$key]);
 				}
 			}
@@ -39,7 +55,23 @@ class Form{
 		}
 		return $this->isValid;
 	}
-	
+
+	/**
+	 * 保存base64图片
+	 * @param $entityName $this->formType->getEntityName();
+	 * @param $key $this->form as $key
+	 */
+	protected function saveBase64Image($entityName, $key){
+		if(FileTool::isBase64Image($this->request[$entityName][$key])){
+			$this->request[$entityName][$key] = FileTool::saveBase64Image($this->request[$entityName][$key]);
+		}
+	}
+
+	/**
+	 * 验证Entity数据是否正确，并赋值
+	 * @param $property
+	 * @param $value
+	 */
 	protected function setEntity($property, $value){
 		$isValid = $this->entity->validate(':'.$property, $value);
 		$this->isValid = !$isValid ? $isValid : $this->isValid;
@@ -47,23 +79,28 @@ class Form{
 			$this->entity->set($property, $value);
 		}
 	}
-		
+
+	/**
+	 * 是否提交合法
+	 * @return bool
+	 */
 	public function isSubmit(){
 		return $this->isSubmit;
 	}
-	
+
+	/**
+	 * 处理Request请求中的数据
+	 * @param $request
+	 */
 	public function handleRequest($request){
-		
 		$formMethod = $this->form['_method'];
 		$isRequest = 'is'.$formMethod;
 		if(!$request->$isRequest()){
 			return;
 		}
-
 		if($request->$formMethod()){
-			$token = md5($_SERVER['HTTP_REFERER'].date('Y-m-d H').'123!@#QWE');
+			$token = $this->createToken();
 			if($request->$formMethod('_token')==$token){
-
 				$this->isSubmit = true;
 				$this->request = $request->$formMethod();
 
@@ -71,15 +108,29 @@ class Form{
 		}
 
 	}
-	
+
+	/**
+	 * 获取entity
+	 * @return mixed
+	 */
 	public function getData(){
 		return $this->entity;
 	}
-	
+
+	/**
+	 * 获取token
+	 * @return mixed
+	 */
 	public function getToken(){
 		return $this->_token;
 	}
-	
+
+	/**
+	 * @param $field  字段名
+	 * @param $type 字段类型
+	 * @param $attr html属性
+	 * @return $this
+	 */
 	public function add($field, $type, $attr){
 		
 		foreach($attr as $key=>$item){
@@ -88,15 +139,14 @@ class Form{
 		}
 		
 		$label = $this->buildLabel($field, $attr);
-
-
 		$this->form[$field] = ['field'=>$field, 'type'=>$type, 'attr'=>$attr, 'label'=>$label];
 
-		
 		return $this;
 	}
 
-
+	/**
+	 * 构建form视图
+	 */
 	protected function buildView(){
 
 		foreach($this->form as $field => $item){
@@ -180,9 +230,9 @@ class Form{
 	
 	protected function createToken(){
 		$host = $_SERVER['HTTP_HOST'];
-		$self = $_SERVER['PHP_SELF'];
-		$token = 'http://'.$host.$self.date('Y-m-d H').'123!@#QWE';
+		$token = 'http://'.$host.get_class($this->entity).date('Y-m-d H').'123!@#QWE';
 		$this->_token = md5($token);
+		return $this->_token;
 	}
 	
 	protected function addToken(){
@@ -196,6 +246,10 @@ class Form{
 	
 	public function row( $property ){
 		return $this->view[$property];
+	}
+
+	public function id(){
+		return 'form-'.$this->formType->getEntityName();
 	}
 	
 	public function content(){

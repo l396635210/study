@@ -4,6 +4,7 @@ namespace Study\Core;
 
 use Study\Core\Template;
 use Study\Core\Form\Form;
+use Study\Resources\Debug;
 use Study\Resources\Request;
 
 class Controller{
@@ -31,7 +32,11 @@ class Controller{
 	}
 	
 	protected function render($view, array $parameters = array()){
-		return $this->template->render($view, $parameters);
+		$build_start = microtime(true);
+		$response = $this->template->render($view, $parameters);
+		$build_end = microtime(true);
+		Debug::addDebug('build_runtime', (int)(($build_end - $build_start)*1000));
+		return $response;
 	}
 	
 	protected function getModel($entity){
@@ -42,11 +47,16 @@ class Controller{
 		}
 		return new $Model( $entity );
 	}
-	
-	protected function createForm( $form, $entity){
+
+    /**
+     * @param $formType 子类formType
+     * @param $entity 子类实体
+     * @return Form
+     */
+	protected function createForm( $formType, $entity){
 		$this->form = new Form();
 
-		$this->form->createForm( $form, $entity);
+		$this->form->createForm( $formType, $entity);
 		return $this->form;
 	}
 	
@@ -69,5 +79,11 @@ class Controller{
 	protected function _addSuccess($message){
 		$message = '<p class=\'alert alert-success\'>提示：'.$message.'</p>';
 		$this->addFlash('success', $message);
+		return $message;
+	}
+
+	protected function jsonResponse($arr){
+		echo json_encode($arr);
+		die;
 	}
 }

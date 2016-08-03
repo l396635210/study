@@ -7,7 +7,10 @@ class AlertTool{
 	protected static $error = [];
 	protected static $success = [];
 	public static function addError($error){
-		self::$error[] = '<p class=\'alert alert-danger\'>警告：'.$error.'</p>';
+		$alert = '<p class=\'alert alert-danger\'>警告：'.$error.'</p>';
+		if(!in_array($alert, self::$error)){
+			self::$error[] = $alert;
+		}
 	}
 	
 	public static function errors($param){

@@ -6,11 +6,18 @@ use Study\Core\Register;
 class AppKernel extends Kernel{
 
 	protected function register(){
+
 		$register = Register::getInstance();
+
+        $register->setParams([
+            'rootDir'	=>	$this->getRootDir(),
+        ]);
+
 		$register->set([
 			'author'	=>	Study\Core\Security\Authorize::getInstance(),
 			'session'	=>  Study\Core\Security\SessionStorage::getInstance(),
 		]);
+
 	}
 
 	public function setRely(){

@@ -18,7 +18,7 @@ abstract class FormType{
 		return $this->options[$option];
 	}
 	
-	abstract function buildForm( $form, $entity );
+	abstract function buildForm(Form $form, $entity );
 	
 	abstract function configOptions( $entity );
 	

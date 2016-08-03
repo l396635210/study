@@ -5,6 +5,7 @@ namespace Study\Core;
 class Register{
 
     protected $container;
+    protected $parameters;
 
     private static $instance;
 
@@ -27,5 +28,19 @@ class Register{
         if(isset($this->container[$key])){
             return $this->container[$key];
         }
+        return null;
     }
+
+    public function setParams($parameters){
+        $this->parameters = $parameters;
+    }
+
+    public function getParam($key){
+        if(isset($this->parameters[$key])){
+            return $this->parameters[$key];
+        }
+        return null;
+    }
+
+
 }

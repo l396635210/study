@@ -3,6 +3,7 @@
 namespace AppBundle\Entity;
 
 use DBAL\ORM\Entity;
+use Study\Core\Security\SessionStorage;
 
 class Article extends Entity{
 	
@@ -31,5 +32,17 @@ class Article extends Entity{
 	protected $updateTime = 	['type'=>'timestamp', 'comment'=>'修改时间'];
 	
 	protected $updateUser = 	['type'=>'int', 'comment'=>'修改人'];
-	
+
+	protected $picture	  = 	['type'=>'varchar', 'comment'=>'图片'];
+
+	public function setInsertDefaultValue(){
+		$this->status = 1;
+		$this->createTime  = $this->publishTime = $this->updateTime = date('Y-m-d H:i:s');
+		$this->createUser  = $this->publishUser = $this->updateUser = $this->getUser()->getId();
+	}
+
+	public function setUpdateDefaultValue(){
+		$this->publishTime = $this->updateTime = date('Y-m-d H:i:s');
+		$this->publishUser = $this->updateUser = $this->getUser()->getId();
+	}
 }

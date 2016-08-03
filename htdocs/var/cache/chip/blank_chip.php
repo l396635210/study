@@ -10,20 +10,25 @@ public function __construct($parameters){
 		}
 public function display(){
  echo"";
-$this->struct_head();
- echo "  ";
+$this->struct_css();
+ echo "  <div id=\"alert\" class=\"block-area\">";
+$this->struct_alert();
+ echo "</div>  ";
 $this->struct_body();
  echo "  ";
-$this->struct_foot();
+$this->struct_js();
  echo "";
 }
-public function struct_head (){
+public function struct_css (){
+ echo "";
+}
+public function struct_alert (){
  echo "";
 }
 public function struct_body (){
  echo "";
 }
-public function struct_foot (){
+public function struct_js (){
  echo "";
 }
 }

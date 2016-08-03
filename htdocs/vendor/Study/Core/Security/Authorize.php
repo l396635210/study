@@ -2,10 +2,12 @@
 
 namespace Study\Core\Security;
 
+use Study\Core\Register;
+
 class Authorize {
 	
 	private $authors;
-	
+	protected $register;
 	private static $instance;
 	
 	private $parseAuthors = [
@@ -13,7 +15,7 @@ class Authorize {
 	];
 	
 	private function __construct(){
-		
+		$this->register = Register::getInstance();
 	}
 	
 	public static function getInstance(){
@@ -25,7 +27,7 @@ class Authorize {
 	}
 	
 	protected function config(){
-		$config = parse_ini_file(__ROOT__.'/../app/config/parameters.ini');
+		$config = parse_ini_file($this->register->getParam('rootDir').'/../app/config/parameters.ini');
 		$this->authors = $config['author'];
 	}
 	

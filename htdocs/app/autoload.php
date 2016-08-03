@@ -8,7 +8,6 @@ class Autoload{
 	protected static $instance;
 	
 	protected function register(){
-		//读取注册组件列表
 		if(!$this->registers){
 			$ini = __DIR__.'/config/register.ini';
 			$this->registers = parse_ini_file($ini);

@@ -67,7 +67,7 @@ $(document).ready(function(){
     $('body').on('click', '.template-skins > a', function(e){
 	e.preventDefault();
 	var skin = $(this).data('skin');
-	$.cookie("skin", skin);
+	$.cookie("skin", skin,  { expires: 7 });
 	$('body').attr('id', skin);
 	$('#changeSkin').modal('hide');
     });
@@ -412,6 +412,7 @@ $(document).ready(function(){
     /* --------------------------------------------------------
      WYSIWYE Editor + Markedown
      -----------------------------------------------------------*/
+	/*
     (function(){
         //Markedown
 	if($('.markdown-editor')[0]) {
@@ -429,7 +430,7 @@ $(document).ready(function(){
 	}
         
     })();
-
+*/
     /* --------------------------------------------------------
      Media Player
      -----------------------------------------------------------*/

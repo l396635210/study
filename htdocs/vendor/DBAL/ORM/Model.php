@@ -5,6 +5,7 @@ namespace DBAL\ORM;
 use DBAL\PDOMySql\Driver;
 use DBAL\Resources\MySqlException;
 use Study\Core\Security\SessionStorage;
+use Study\Resources\Debug;
 
 class Model{
 	
@@ -86,7 +87,7 @@ class Model{
 	}
 	
 	/**
-	 * $model->createQuery($sql)->setParam(':key',$key)->execute()
+	 * $model->createQuery($sql)->setParam([':key'=>$val])->execute()
 	 */
 	public function createQuery($sql){
 		$this->prepare($sql);
@@ -94,19 +95,33 @@ class Model{
 	}
 	
 	public function getFind($find=self::FIND_ALL){
-		$this->execute(); 
+		$this->execute();
+        $this->parameters = null;
 		if($find==self::FIND_ONE){
 			return $this->fetch();
 		}
 		return $this->fetchAll();
 	}
+
+	public function getCount(){
+        $this->execute();
+        $this->parameters = null;
+        $res = $this->fetch();
+        return $res['cnt'];
+    }
 	
 	public function findAll(){
 		$this->select('*', $this->entity->getTable());
 		$this->prepare($this->sql);
 		return $this;
 	}
-	
+
+    /**
+     * @param $wheres ['status','=',1] or [['status','=',1],['id','>',1]]
+     * @param array $orderBy ['id'=>'desc'] [['id'=>'desc'],['date'=>'desc']]
+     * @param array $limit [0,10]
+     * @return $this
+     */
 	public function findBy($wheres, $orderBy=[], $limit=[]){
 		$whereFunction = (count($wheres, COUNT_RECURSIVE)==count($wheres)) ? 'where' : 'wheres';
 		$this->select('*', $this->entity->getTable())
@@ -114,17 +129,46 @@ class Model{
 			 ->orderBy($orderBy)
 			 ->limit($limit);
 		$this->prepare($this->sql);
-		#$this->bindParams();
+        #$this->bindParams();
 		return $this;
 	}
+
+	public function _sql(){
+	    return ['sql'=>$this->sql, 'params'=>$this->parameters];
+    }
 	
 	public function findOne($id){
 		return $this->findBy(['id', '=', $id]);
 	}
-	
+
+	public function count(){
+        $this->select('COUNT(*) AS cnt', $this->entity->getTable());
+        $this->prepare($this->sql);
+        return $this;
+    }
+
+    public function countBy($wheres){
+        $whereFunction = (count($wheres, COUNT_RECURSIVE)==count($wheres)) ? 'where' : 'wheres';
+        $this->select('COUNT(*) AS cnt', $this->entity->getTable())
+            ->$whereFunction($wheres);
+        $this->prepare($this->sql);
+        #$this->bindParams();
+        return $this;
+    }
+
 	protected function select($fields, $table){
 		$fields = is_array($fields) ? implode(',', $fields) : $fields;
-		$this->sql = "SELECT " .$fields. " FROM ". $table . " WHERE 1=1 ";
+		$this->sql = "SELECT " .$fields. " FROM ". $table ;
+		return $this;
+	}
+
+	/**
+	 * @param $table string tableName
+	 * @param $on ['table1'=>'id','table2'=>'id']
+	 */
+	protected function join($table, $on, $type='INNER'){
+		$_join = $type." JOIN ".$table." ON ".key($on[0]).".".current($on[0])." = ".key($on[1]).".".current($on[1]);
+		$this->sql .= $_join;
 		return $this;
 	}
 	
@@ -139,23 +183,25 @@ class Model{
 	}
 	
 	protected function where($where){
+		$_where = " WHERE 1=1 ";
 		if(is_array($where) && count($where>0)){
 			if(count($where)==2){
-				$where = [$where[0], '=', $where[1]];
+				$_where = [$where[0], '=', $where[1]];
 			}
-			$this->sql .= " AND {$where[0]} {$where[1]} :{$where[0]}";
+			$_where .= " AND {$where[0]} {$where[1]} :{$where[0]}";
 			$this->setParam([':'.$where[0]=>$where[2]]);
 		}
+		$this->sql .= $_where;
 		return $this;
 	}
 	
 	protected function orderBy($order){
+		$_order = " ORDER BY ";
 		if(is_array($order) && count($order)>0){
-			$this->sql .= " ORDER BY ";
 			foreach( $order as $key=>$val ){
-				$this->sql .= $key ." ". $val.",";
+				$_order .= $key ." ". $val.",";
 			}
-			$this->sql .= substr($this->sql, 0, -1);
+			$this->sql .= substr($_order, 0, -1);
 		}
 		return $this;
 	}
@@ -223,18 +269,50 @@ class Model{
 			$e->show('修改数据出错',$e->getTrace());die;
 		}
 	}
+
+	/**
+	 * 把表中status字段改为0
+	 * @param $entity
+	 * @return mixed
+	 */
+	public function delete($entity){
+		try{
+			if($this->entity->getTable()==$entity->getTable()){
+				//update 语句
+				$sql = "UPDATE {$this->entity->getTable()} SET
+						{$this->entity->getTable()}.status = 0
+						 WHERE id={$entity->get('id')}";
+				$this->prepare(camelize2symbol($sql));
+				$this->execute();
+				return $this->rowCount();
+			}
+
+		}catch(MySqlException $e){
+			$e->show('删除数据失败',$e->getTrace());die;
+		}
+	}
 	
 	public function prepare($sql, $attr=[]){
 		$this->sth = $this->conn->prepare($sql, $attr);
 		return $this;
 	}
-	
+
+	/**
+	 * @param $array
+	 * @param null $type PDO::PARAM 常量
+	 * @param int $length 字段长度
+	 * @return $this
+	 */
 	public function setParam($array, $type=Null, $length=0){
 
 		$field = key($array)[0]==':' ? substr(key($array), 1) : key($array);
 
+		if(strstr($field, ':')){
+			$field = substr($field, stripos($field, ':')+1);
+		}
 		$type = $type ? \PDO::PARAM_STR : $this->entity->getPDOType($field);
-		$length = $length ? $length : $this->entity->getPDOLength($field);
+
+        $length = $length ? $length : $this->entity->getPDOLength($field);
 
 		if($type == \PDO::PARAM_INT && is_numeric(current($array))){
 			$val = (int)current($array);
@@ -253,7 +331,6 @@ class Model{
 	protected function bindParams(){
 		if($this->parameters){
 			foreach( $this->parameters as $parameter ){
-
 				if($parameter['length']){
 					$this->sth->bindParam(camelize2symbol($parameter['parameter']), $parameter['variable'], 
 					$parameter['data_type'], $parameter['length']);
@@ -261,7 +338,6 @@ class Model{
 					$this->sth->bindParam($parameter['parameter'], $parameter['variable'],
 					$parameter['data_type']);
 				}
-				
 			}
 		}
 		return $this;
@@ -271,7 +347,11 @@ class Model{
 		if($this->parameters){
 			$this->bindParams();
 		}
+		$query_start = microtime('true');
 		$this->sth->execute();
+		$query_end   = microtime('true');
+		$query_runtime = round(($query_end-$query_start)*1000,2);
+		Debug::addDebug('query_runtime', $query_runtime.'毫秒');
 		return $this;
 	}
 	

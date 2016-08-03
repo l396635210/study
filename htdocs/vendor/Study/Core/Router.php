@@ -69,8 +69,7 @@ class Router{
 			$route = self::route($path[0]);
 			$route['url'] = strtr($route['url'], $path[1]);
 		}
-		
-		$rootURI = $_SERVER['SERVER_NAME'].$_SERVER['CONTEXT_PREFIX'].'index.php';
+		$rootURI = $_SERVER['SERVER_NAME'].$_SERVER['SCRIPT_NAME'];
 		return 'http://'.$rootURI.$route['url'];
 	}
 	

@@ -3,11 +3,12 @@
 namespace AppBundle\Form;
 
 use AppBundle\Entity\User;
+use Study\Core\Form\Form;
 use Study\Core\Form\FormType;
 
 class UserType extends FormType{
 	
-	public function buildForm( $form , $entity){
+	public function buildForm(Form $form , $entity){
 		$form->add('username', self::TEXT, ['label'=>'姓名'
 			, 'attr'=>"class='form-control' placeholder='最多输入10个字'"])
 			 ->add('account', self::TEXT, ['label'=>'帐号'

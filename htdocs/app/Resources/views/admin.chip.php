@@ -18,17 +18,14 @@
     <link href="{{ asset('admin/css/style.css') }}" rel="stylesheet">
     <link href="{{ asset('admin/css/icons.css') }}" rel="stylesheet">
     <link href="{{ asset('admin/css/generics.css') }}" rel="stylesheet">
-    <script src="//cdn.ckeditor.com/4.5.10/standard/ckeditor.js"></script>
 </head>
 <body id="skin-blur-violate">
 
 <header id="header" class="media">
     <a href="" id="menu-toggle"></a>
     <a class="logo pull-left" href="#">后台管理</a>
-
     <div class="media-body">
         <div class="media" id="top-menu">
-
             <div id="time" class="pull-right">
                 <span id="hours"></span>
                 :
@@ -71,27 +68,27 @@
 
         <!-- Side Menu -->
         <ul class="list-unstyled side-menu">
-            <li class="active">
+            <li class="active list-item">
                 <a class="sa-side-home" href="{{ path('admin') }}">
                     <span class="menu-item">首页</span>
                 </a>
             </li>
-            <li class="dropdown">
-                <a class="sa-side-folder" href="{{ path('category_list') }}">
+            <li class="dropdown list-item">
+                <a class="sa-side-folder" href="{{ path('category_list',{page:1}) }}">
                     <span class="menu-item">栏目管理</span>
                 </a>
-                <ul class="list-unstyled menu-item">
-                    <li><a href="{{ path('category_list') }}">栏目列表</a></li>
-                    <li><a href="{{ path('category_create') }}">添加栏目</a></li>
+                <ul class="list-unstyled menu-item" id="aside-category">
+                    <li><a href="{{ path('category_list',{page:1}) }}" class="list">栏目列表</a></li>
+                    <li><a href="{{ path('category_create') }}" class="create">添加栏目</a></li>
                 </ul>
             </li>
-            <li class="dropdown">
-                <a class="sa-side-form" href="">
+            <li class="dropdown list-item" id="aside-article">
+                <a class="sa-side-form" href="{{ path('article_list', {page:1}) }}">
                     <span class="menu-item">文章管理</span>
                 </a>
                 <ul class="list-unstyled menu-item">
-                    <li><a href="form-elements.html">文章列表</a></li>
-                    <li><a href="form-components.html">发布文章</a></li>
+                    <li><a href="{{ path('article_list', {page:1}) }}" class="list">文章列表</a></li>
+                    <li><a href="{{ path('article_create') }}" class="create">发布文章</a></li>
                 </ul>
             </li>
         </ul>
@@ -100,7 +97,9 @@
 
     <!-- Content -->
     <section id="content" class="container">
-        {% struct body %}{% endstruct %}
+        <div id="body">
+            {% struct body %}{% endstruct %}
+        </div>
     </section>
 
 
@@ -111,6 +110,9 @@
 <script src="{{ asset('common/js/jquery.min.js') }}"></script> <!-- jQuery Library -->
 <script src="{{ asset('common/js/jquery-ui.min.js') }}"></script> <!-- jQuery Library -->
 <script src="{{ asset('common/js/jquery.cookie.js') }}"></script> <!-- jQuery Library -->
+
+<!-- underscore -->
+<script src="{{ asset('common/js/underscore.js') }}"></script>
 <!-- Bootstrap -->
 <script src="{{ asset('common/js/bootstrap.min.js') }}"></script>
 <!--  Form Related -->
@@ -128,10 +130,6 @@
 <script src="{{ asset('admin/js/slider.min.js') }}"></script> <!-- Input Slider -->
 <script src="{{ asset('admin/js/fileupload.min.js') }}"></script> <!-- File Upload -->
 
-<!-- Text Editor -->
-<script src="{{ asset('admin/js/editor2.min.js') }}"></script> <!-- WYSIWYG Editor -->
-<script src="{{ asset('admin/js/markdown.min.js') }}"></script> <!-- Markdown Editor -->
-
 <!-- UX -->
 <script src="{{ asset('admin/js/scroll.min.js') }}"></script> <!-- Custom Scrollbar -->
 
@@ -139,25 +137,40 @@
 <script src="{{ asset('admin/js/calendar.min.js') }}"></script> <!-- Calendar -->
 <script src="{{ asset('admin/js/feeds.min.js') }}"></script> <!-- News Feeds -->
 
-
 <!-- All JS functions -->
 <script src="{{ asset('admin/js/functions.js') }}"></script>
 <script>
-(function(){
-    $('.side-menu').find('a').click(function(e){
-        e.preventDefault();
 
-        if($(this).attr('href')!=location.href){
-            $.post($(this).attr('href')
+var SPA = function(){
+    this.spaAction = function(obj){
+        if($(obj).attr('href') && $(obj).attr('href')!=location.href){
+            /*$.cookie('href', $(obj).attr('href'));*/
+            $.post($(obj).attr('href')
                 ,{}
                 ,function(data){
-                $("#content").html(data);
-            });
+                    $("#body").html(data);
+                });
         }else{
-            $("#content").html("");
+            $("#alert").html("");
+            $("#body").html("");
         }
-    });
-})();
+    }
+};
+
+var spa = new SPA();
+$(document).ready(function(){
+
+    (function(){
+        $('.side-menu').find('a').click(function(e){
+            e.preventDefault();
+            spa.spaAction(this);
+            $('.side-menu').find('.list-item').removeClass('active');
+            $(this).parents('.list-item').addClass('active');
+        });
+    })();
+
+    /*$('.side-menu').find('a[href="'+$.cookie('href')+'"]').click();*/
+});
 </script>
 {% struct js %}{% endstruct %}
 </body>

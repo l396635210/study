@@ -2,6 +2,8 @@
 
 namespace Study\Core;
 
+use AppBundle\Entity\User;
+use Study\Resources\Debug;
 use Study\Resources\StudyException;
 use Study\Core\Security\SessionStorage;
 
@@ -12,6 +14,7 @@ class Kernel{
 	protected $environment;
 	protected $debug;
 	protected $rootDir;
+	protected $debugPackage;
 	protected $startTime;
 	
 	public function __construct($environment,$debug){
@@ -23,14 +26,14 @@ class Kernel{
 		if($this->debug){
 			$this->startTime = microtime(true);
 		}
-		
+
 	}
-	/*
+
 	public function get($name){
-		$this->setRely();
-		return $this->rely[$name];
+		$register = Register::getInstance();
+		return $register->get($name);
 	}
-	*/
+
 	public function handle($request)
     {
 		return $this->handlePathInfo($request);
@@ -50,9 +53,9 @@ class Kernel{
 				}
 
 				$route = isset($route) ? $route : route('home');
+				Debug::addDebug('route',$route);
 				list($Controller, $action) = explode('@',$route['action']);
 				$controller = new $Controller($this);
-
 				return $controller->$action($request);
 			}
 			throw new \Exception('没有权限');
@@ -61,9 +64,14 @@ class Kernel{
 		}
 		
 	}
-	
+
+	public function terminate(){
+		if($this->environment=='dev' && $this->debug){
+			Debug::load($this->startTime);
+		}
+	}
+
 	protected function validAuthor(){
-		
 		$url = isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : '/';
 		#$authorize = $this->get('author');
 		$register = Register::getInstance();
@@ -80,8 +88,7 @@ class Kernel{
 	}
 	
 	protected function access(){
-		$user = $this->getUser();
-		$role = $user['role'];
+		$role = $this->getUser()->getRole();
 		$isAccess = $this->validAuthor();
 
 		if($isAccess && $role!=$isAccess){
@@ -93,6 +100,6 @@ class Kernel{
 	
 	public function getUser(){
 		$sessionStorage = SessionStorage::getInstance();
-		return $sessionStorage->get('user');
+		return new User($sessionStorage->get('user'));
 	}
 }

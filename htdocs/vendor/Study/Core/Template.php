@@ -2,6 +2,8 @@
 
 namespace Study\Core;
 
+use Study\Resources\Debug;
+
 class Template{
 	
 	protected $kernel;
@@ -18,19 +20,22 @@ class Template{
 		"/{% struct ([a-z]+) %}/"			 => "public function struct_$1 (){\n echo \"",
 		"/{% foreach (\w+) as (\w+) %}/" 	 => "\";\nforeach(isset(\$this->parameters['$1']) ? \$this->parameters['$1'] : $$1 as $$2):\necho\"",
 		'/{% endforeach %}/'				 => "\";\nendforeach;\necho \"",
-		'/{{ ([a-z]+) }}/'					 => "\";\necho \$this->parameters['$1'];\necho \"",
-		'/{{ ([a-z]+).([a-z]+) }}/'		 	 => "\";\necho $$1['$2'];\necho\"",
+		'/{{ ([\w]+) }}/'					 => "\";\necho \$this->parameters['$1'];\necho \"",
+		'/{{ ([\w]+).([\w]+) }}/'		 	 => "\";\necho isset($$1['$2']) ? $$1['$2'] : \$this->parameters['$1']['$2'];\necho\"",
 		'/{% if (\w+) %}/'				 	 => "\";\nif(isset(\$this->parameters['$1']) ? \$this->parameters['$1'] : $$1 ):\necho \"",
 		'/{% endif %}/'						 => "\";\nendif;\necho \"",
 		"/{{ form.row\('([a-zA-Z]+)'\) }}/"	 => "\";\necho \$this->parameters['form']->row('$1');\necho \"",
+		"/{{ form.id\(\) }}/"	 				 => "\";\necho \$this->parameters['form']->id();\necho \"",
 		"/{{ form.start\(([\w\s-=]*)([,]?)([\w\s'=-]*)\) }}/" => "\";\necho \$this->parameters['form']->start(\"$1\",\"$3\");\necho \"",
 		"/{{ form.end\(\) }}/"				 => "\";\necho \$this->parameters['form']->end();\necho \"",
 		"/{{ errors\('all'\) }}/"			 => "\";\nforeach(errors('all') as \$error){\necho \$error;\n}\necho\"",
 		"/{{ success\('([a-zA-Z]+)'\) }}/"	 => "\";\necho isset(\$_SESSION['$1']) ? \$_SESSION['$1'] : \"\";unset(\$_SESSION['$1']);\necho\"",
 		"/{{ path\('([a-zA-Z_]+)'\) }}/"	=> "\";\necho path('$1');\necho \"",
-		"/{{ path\('([a-zA-Z_]+)',\s+{([a-zA-Z']+):([a-zA-Z]+).([a-zA-Z]+)}\) }}/"	
+		"/{{ path\('([a-zA-Z_]+)',\s+{([a-zA-Z']+):([a-zA-Z]+).([a-zA-Z]+)}\) }}/"
 			=> "\";\necho path(['$1', [$2=>$$3['$4']]]);\necho \"",
 		"/{'\([a-zA-Z]+\)':\([\w+]\)}/"		 => "['$1'=>'$2']",
+        "/{{ path\('([a-zA-Z_]+)',\s+{([a-zA-Z']+):([\d]+)}\) }}/"
+        => "\";\necho path([ '$1', [$2=>$3] ]);\necho \"",
 		"/{{ asset\('([a-zA-Z.\/_\d-]+)'\) }}/" => "/std/assets/$1",
 	];
 	
@@ -73,6 +78,8 @@ class Template{
 		"/{{ path\('([a-zA-Z_]+)'\) }}/"			=> "\";\necho path('$1');\necho \"",
 		"/{{ path\('([a-zA-Z_]+)',\s+{([a-zA-Z']+):([a-zA-Z]+).([a-zA-Z]+)}\) }}/"
 		=> "\";\necho path(['$1', [$2=>$$3['$4']]]);\necho \"",
+        "/{{ path\('([a-zA-Z_]+)',\s*{([a-zA-Z']+):(\d+)}\) }}/"
+        => "\";\necho path([ '$1', ['$2'=>$3] ]);\necho \"",
 	];
 	
 	protected function ChipConstruct(){
